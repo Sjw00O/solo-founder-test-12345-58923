@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test 12345 - AI 助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 2rem;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+        button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-box {
+            background: #f8f9fe;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 80px;
+            margin-top: 20px;
+            border: 1px solid #e8e8f0;
+            transition: all 0.3s;
+        }
+        .result-box.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .result-box .result-content {
+            line-height: 1.6;
+            color: #333;
+        }
+        .result-box .result-content pre {
+            background: #1a1a2e;
+            color: #f0f0f0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+        .result-box .result-content .success {
+            color: #2ecc71;
+            font-weight: 600;
+        }
+        .result-box .result-content .error {
+            color: #e74c3c;
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .feedback-area {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e8e8f0;
+        }
+        .feedback-area h3 {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .feedback-row {
+            display: flex;
+            gap: 10px;
+        }
+        .feedback-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .feedback-row input:focus {
+            border-color: #764ba2;
+        }
+        .feedback-row button {
+            padding: 10px 20px;
+            background: #2ecc71;
+            font-size: 0.9rem;
+        }
+        .feedback-row button:hover {
+            background: #27ae60;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: opacity 0.4s, transform 0.4s;
+            pointer-events: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+            }
+            .input-group {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>🧪</span> Test 12345
+        </h1>
+        <p class="subtitle">输入内容，AI 自动处理并生成报告</p>
+
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="输入 'test 12345' 或任何内容..." autofocus>
+            <button id="submitBtn">🚀 执行</button>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-content" id="resultContent">
+                <span style="color:#999;">等待输入...</span>
+            </div>
+        </div>
+
+        <div class="feedback-area">
+            <h3>💬 一键反馈</h3>
+            <div class="feedback-row">
+                <input type="text" id="feedbackInput" placeholder="写下你的建议或问题...">
+                <button id="feedbackBtn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            const userInput = document.getElementById('userInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const resultContent = document.getElementById('resultContent');
+            const resultBox = document.getElementById('resultBox');
+            const feedbackInput = document.getElementById('feedbackInput');
+            const feedbackBtn = document.getElementById('feedbackBtn');
+            const toast = document.getElementById('toast');
+
+            // 模拟AI处理函数
+            function simulateAIProcessing(inputText) {
+                return new Promise((resolve) => {
+                    // 模拟网络延迟 1.5~2.5秒
+                    const delay = 1500 + Math.random() * 1000;
+                    setTimeout(() => {
+                        const trimmed = inputText.trim().toLowerCase();
+                        let result;
+                        if (trimmed === 'test 12345' || trimmed === 'test12345') {
+                            result = {
+                                type: 'success',
+                                title: '✅ 任务执行成功',
+                                summary: '已自动生成标准报告',
+                                details: `输入内容: "${inputText}"\n\n处理结果:\n- 数据校验: 通过\n- AI 分析: 完成\n- 报告格式: Markdown\n- 时间戳: ${new Date().toLocaleString()}\n\n\`\`\`json\n{\n  "status": "ok",\n  "task": "test_12345",\n  "output": "自动化报告 v1.0"\n}\n\`\`\``
+                            };
+                        } else {
+                            result = {
+                                type: 'info',
+                                title: '🔍 通用处理',
+                                summary: '已识别输入内容',
+                                details: `输入内容: "${inputText}"\n\nAI 分析结果:\n- 关键词提取: ${inputText.split(' ').length > 0 ? inputText.split(' ').join(', ') : '无'}\n- 情感倾向: 中性\n- 建议操作: 可尝试输入 "test 12345" 体验完整自动化流程\n\n(演示模式)`
+                            };
+                        }
+                        resolve(result);
+                    }, delay);
+                });
+            }
+
+            // 显示结果
+            function displayResult(result) {
+                resultBox.classList.remove('loading');
+                const html = `
+                    <div class="result-content">
+                        <div style="font-weight:600; margin-bottom:6px;">${result.title}</div>
+                        <div style="color:#555; margin-bottom:10px;">${result.summary}</div>
+                        <pre>${result.details}</pre>
+                    </div>
+                `;
+                resultContent.innerHTML = html;
+            }
+
+            // 显示加载状态
+            function showLoading() {
+                resultBox.classList.add('loading');
+                resultContent.innerHTML = `
+                    <div class="spinner"></div>
+                    <span style="color:#666;">AI 正在处理...</span>
+                `;
+            }
+
+            // 显示Toast消息
+            function showToast(message, duration = 3000) {
+                toast.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            }
+
+            // 提交处理
+            async function handleSubmit() {
+                const inputVal = userInput.value.trim();
+                if (!inputVal) {
+                    showToast('请输入内容');
+                    userInput.focus();
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                showLoading();
+
+                try {
+                    const result = await simulateAIProcessing(inputVal);
+                    displayResult(result);
+                    showToast('✅ 处理完成', 2000);
+                } catch (err) {
+                    resultBox.classList.remove('loading');
+                    resultContent.innerHTML = `<div class="result-content"><span class="error">❌ 处理出错: ${err.message}</span></div>`;
+                    showToast('处理失败，请重试');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            }
+
+            // 反馈提交
+            function handleFeedback() {
+                const feedback = feedbackInput.value.trim();
+                if (!feedback) {
+                    showToast('请输入反馈内容');
+                    feedbackInput.focus();
+                    return;
+                }
+                // 模拟发送反馈
+                showToast('📨 感谢您的反馈！', 3000);
+                feedbackInput.value = '';
+            }
+
+            // 事件绑定
+            submitBtn.addEventListener('click', handleSubmit);
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSubmit();
+            });
+            feedbackBtn.addEventListener('click', handleFeedback);
+            feedbackInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleFeedback();
+            });
+
+            // 初始演示提示
+            console.log('Test 12345 AI 助手已加载。输入 "test 12345" 体验自动化流程。');
+        })();
+    </script>
+</body>
+</html>
